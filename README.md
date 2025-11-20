@@ -300,59 +300,10 @@ npm run dev
 
 **Frontend will run on**: `http://localhost:5173`
 
-### 5. Qdrant Vector Database Setup
-
-```bash
-# Install Docker if not already installed
-# Follow: https://docs.docker.com/engine/install/
-
-# Run Qdrant container
-docker run --name qdrant -p 6333:6333 -v qdrant_storage:/qdrant/storage qdrant/qdrant
-
-# Access dashboard at: http://localhost:6333/dashboard
-```
-
-**Upload Snapshot**:
-1. Download the India Laws snapshot: [Download Link](https://www.mediafire.com/file/b254k63ormo2kr5/india_laws.snapshot/file)
-2. Upload via Qdrant dashboard
-
-### 6. Ollama Setup
-
-```bash
-# Download and install Ollama
-# Visit: https://ollama.ai/download
-
-# Pull embedding model
-ollama pull nomic-embed-text:latest
-```
-
-### 7. AI Service Setup (Python)
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-./venv/Scripts/Activate
-# Linux/Mac:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run FastAPI service
-uvicorn main:app --reload
-```
-
-**AI Service will run on**: `http://localhost:8000`
-
-### 8. Verify Setup
+### 5. Verify Setup
 
 - **Frontend**: http://localhost:5173
 - **Backend**: http://localhost:5000
-- **AI Service**: http://localhost:8000
-- **Qdrant Dashboard**: http://localhost:6333/dashboard
 
 ### Common Issues
 
@@ -362,9 +313,6 @@ uvicorn main:app --reload
 **Issue**: Socket.IO not connecting  
 **Solution**: Ensure backend is running and `FRONTEND_URL` in `.env` matches frontend port
 
-**Issue**: AI responses not streaming  
-**Solution**: Verify `AI_API_URL` in `.env` points to correct FastAPI endpoint
-
 ---
 
 ## 🔐 Environment Variables
@@ -372,14 +320,9 @@ uvicorn main:app --reload
 ### Root `.env` File
 
 ```bash
-# Indian Kanoon API (for legal data)
-INDIAN_KANOON_API_KEY=your_key_here
 
 # Google AI (Gemini model)
 GOOGLE_API_KEY=your_gemini_api_key
-
-# Tavily API (optional search enhancement)
-TAVILY_API_KEY=your_key_here
 
 # MongoDB Connection
 MONGO_DEV_URI=mongodb+srv://username:password@cluster.mongodb.net/aramai?retryWrites=true&w=majority
@@ -392,12 +335,6 @@ JWT_EXPIRES_IN=30d
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
-
-# Nomic Embeddings
-NOMIC_API_KEY=your_key_here
-
-# AI Service URL
-AI_API_URL=http://localhost:8000/chat_stream/
 
 # Backend Port (optional, defaults to 5000)
 PORT=5000
@@ -701,14 +638,6 @@ FRONTEND_URL=http://localhost:5173
 - [ ] Advanced search filters (success rate, availability)
 - [ ] Multi-language support (Hindi, Tamil, etc.)
 
-**Phase 3 (1 Year)**:
-- [ ] Blockchain-based legal document verification
-- [ ] AI-powered contract generation
-- [ ] Integration with court APIs (e-filing)
-- [ ] Legal knowledge graph for better context
-- [ ] Voice-based AI interactions
-- [ ] Marketplace for legal services
-
 **Technical Debt**:
 - Refactor frontend state management (consider React Query)
 - Add comprehensive unit and integration tests
@@ -718,18 +647,6 @@ FRONTEND_URL=http://localhost:5173
 - Optimize bundle size and lazy loading
 
 ---
-
-## 📦 Submission Checklist
-
-### Folder Structure
-```
-FullName_College_AramAI/
-├── code_repository_link.txt       # GitHub/GitLab link
-├── demo_video.mp4                 # 3-6 minute walkthrough
-├── README.md                      # This file
-├── architecture_diagram.png       # System architecture
-└── .env.example                   # Environment variables template
-```
 
 ### Required Files
 - ✅ Code repository link (view-only)
@@ -751,34 +668,6 @@ FullName_College_AramAI/
 - ✅ Impact & metrics
 - ✅ What's next (limitations + improvements)
 
-### Demo Video Structure (Reference)
-
-**Introduction (0:00 - 0:30)**:
-- Problem statement
-- Target audience
-- Solution overview
-
-**Technical Overview (0:30 - 1:30)**:
-- Architecture walkthrough
-- Tech stack highlights
-- Key components
-
-**Feature Walkthrough (1:30 - 4:30)**:
-- User registration/login
-- AI chat demonstration
-- Lawyer search and filtering
-- Real-time messaging
-- Profile management
-
-**Technical Deep Dive (4:30 - 5:30)**:
-- Code snippets (AI streaming, Socket.IO)
-- Database queries (geospatial search)
-- RAG implementation
-
-**Conclusion (5:30 - 6:00)**:
-- Impact and metrics
-- Future roadmap
-- Call to action
 
 ---
 
@@ -791,18 +680,13 @@ MIT License - See [LICENSE](LICENSE) file for details.
 ## 👥 Team
 
 - **Sethukumar M** - Full-Stack Development, AI Integration
-- **Mithun Arulmani** - Backend Development, Database Design
-- **Nawrinth** - Frontend Development, UI/UX
-- **Andrew A.** - AI Service, Vector Database Setup
 
 ---
 
 ## 📧 Contact
 
 For questions or collaboration:
-- **Email**: [project email]
-- **GitHub**: [repository link]
-- **Demo**: [live demo URL if deployed]
+- **Email**: sethukumars774@gmail.com
 
 ---
 
