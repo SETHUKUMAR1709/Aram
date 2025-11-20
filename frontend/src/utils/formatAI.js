@@ -1,65 +1,50 @@
 export function formatAIResponse(text = "") {
   if (!text) return "";
-
-  let t = text;
-
-  // Fix double/triple spacing produced by streaming chunks
-  t = t.replace(/\n{3,}/g, "\n\n");
-
-  // Make URLs clickable
-  t = t.replace(
-    /(https?:\/\/[^\s]+)/g,
-    (url) => `[${url}](${url})`
-  );
-
-  // Add spacing between paragraphs if missing
-  t = t.replace(/([^\n])\n([^\n])/g, "$1\n\n$2");
-
-  // Fix broken list formatting
-  t = t.replace(/^\s*-\s+/gm, "- ");
-  t = t.replace(/^\s*\*\s+/gm, "- ");
-  t = t.replace(/^\s*\d+\.\s+/gm, "1. ");
-
-  return t.trim();
+  
+  text = text
+    .replace(/\r\n/g, "\n")           // Normalize line endings
+    .replace(/\n{3,}/g, "\n\n")       // Reduce 3+ newlines to exactly 2
+    .replace(/ {3,}/g, " ")           // Remove excessive spaces inside lines
+    .replace(/^\s+/gm, "")            // Trim leading spaces from each line
+    .trim();                          // Clean edges
+    
+  return text;  
 }
 
 export function normalizeMarkdownChunk(prev, chunk) {
   let fixed = chunk;
 
-  // Remove stray leading spaces that break markdown
+  // Trim unnecessary leading spaces
   fixed = fixed.replace(/^\s+/g, "");
 
-  // Remove triple or more line breaks
+  // Collapse 3+ line breaks
   fixed = fixed.replace(/\n{3,}/g, "\n\n");
 
   // Remove excessive spaces inside lines
   fixed = fixed.replace(/ {3,}/g, " ");
 
-  // Fix headings broken across chunks
-  if (prev.trim().match(/^#+\s*$/)) {
+  // If previous chunk ended with incomplete heading (e.g., "##")
+  if (/^#+\s*$/.test(prev.trim())) {
     fixed = fixed.trimStart();
   }
 
-  // Fix broken bullets across chunks ("- " + "continued")
+  // Fix broken list continuation ("-" + "\n" + " item")
   if (prev.trim().endsWith("-") && fixed.startsWith(" ")) {
     fixed = fixed.trimStart();
   }
 
-  // Fix list continuation
-  if (/^\* {2,}/.test(fixed)) {
-    fixed = fixed.replace(/^\* {2,}/, "* ");
-  }
+  // Fix markdown bullets that got messed up
+  fixed = fixed.replace(/^\*\s{2,}/, "- ");
 
-  // Fix headings that split: "## Req" + "uirements"
-  if (prev.endsWith("##") || prev.endsWith("###") || prev.endsWith("#")) {
+  // Fix heading broken across chunks ("### Req" + "uirements")
+  if (prev.endsWith("#") || prev.endsWith("##") || prev.endsWith("###")) {
     fixed = fixed.trimStart();
   }
 
-  // Prevent markdown corruption when code blocks break across chunks
+  // Fix broken code block (``` + ``` chunk)
   if (prev.trim().endsWith("```") && fixed.trim().startsWith("```")) {
-    fixed = "\n" + fixed; 
+    fixed = "\n" + fixed;
   }
 
   return fixed;
 }
-

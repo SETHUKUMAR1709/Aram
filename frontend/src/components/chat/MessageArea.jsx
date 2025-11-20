@@ -8,6 +8,7 @@ import { formatAIResponse } from "@/utils/formatAI";
 
 
 const PremiumTypingAnimation = () => {
+
   return (
     <div className="flex items-center">
       <div className="flex items-center space-x-1.5">
@@ -154,7 +155,7 @@ const SearchStages = ({ searchInfo }) => {
   );
 };
 
-const MessageArea = ({ messages }) => {
+const MessageArea = ({ messages }) => { 
   const endRef = useRef();
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });

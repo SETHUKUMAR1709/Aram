@@ -249,12 +249,6 @@ export const findLawyers = async (req, res) => {
     if (longitude && latitude) {
       lawyers = await User.find({
         ...query,
-        location: {
-          $near: {
-            $geometry: { type: "Point", coordinates: [parseFloat(longitude), parseFloat(latitude)] },
-            $maxDistance: parseInt(maxDistance) || 5000,
-          },
-        },
       }).select("-password -chats");
     } else {
       lawyers = await User.find(query).select("-password -chats");
