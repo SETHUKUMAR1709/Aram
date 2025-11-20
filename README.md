@@ -80,11 +80,8 @@ Legal information is often complex, jargon-heavy, and inaccessible to the averag
   - Google Generative AI (@langchain/google-genai 1.0.3)
   - Gemini 1.5 Flash model
 - **Agent Framework**: LangGraph (@langchain/langgraph 1.0.2)
-- **Vector Database**: Qdrant (Docker deployment)
-- **Embeddings**: Ollama (nomic-embed-text)
 
 ### **Infrastructure**
-- **Containerization**: Docker (for Qdrant)
 - **Session Management**: express-session 1.18.2
 - **CORS**: cors 2.8.5
 - **Development**: nodemon 3.1.10
@@ -128,33 +125,21 @@ Legal information is often complex, jargon-heavy, and inaccessible to the averag
                                   │
 ┌─────────────────────────────────▼───────────────────────────────┐
 │                      AI SERVICE LAYER (FastAPI)                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              LangGraph React Agent                        │  │
-│  │  - Gemini 1.5 Flash LLM                                  │  │
-│  │  - Memory Saver (Checkpoint Management)                  │  │
-│  │  - Streaming Response Generation                         │  │
-│  └────────────────────┬─────────────────────────────────────┘  │
-│                       │                                          │
-│  ┌────────────────────▼─────────────────────────────────────┐  │
-│  │          Qdrant Vector Database (Docker)                 │  │
-│  │  - Indian Laws Embeddings                                │  │
-│  │  - Semantic Search                                       │  │
-│  │  - RAG Context Retrieval                                 │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │          Ollama Embedding Service                         │  │
-│  │  - nomic-embed-text model                                │  │
-│  │  - Local embedding generation                            │  │
-│  └──────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │              LangGraph React Agent                       │   │
+│  │  - Gemini 1.5 Flash LLM                                  │    │
+│  │  - Memory Saver (Checkpoint Management)                  │    │
+│  │  - Streaming Response Generation                         │    │
+│  └──────────────────────────────────────────────────────────┘    │
+|                                                                  |
 └──────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────┐
-│                     EXTERNAL SERVICES                             │
-│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐  │
-│  │  Cloudinary    │  │  Google AI     │  │  MongoDB Atlas   │  │
-│  │  (File Upload) │  │  (Gemini API)  │  │  (Cloud DB)      │  │
-│  └────────────────┘  └────────────────┘  └──────────────────┘  │
+│                     EXTERNAL SERVICES                            │
+│  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐    │
+│  │  Cloudinary    │  │  Google AI     │  │  MongoDB Atlas   │    │
+│  │  (File Upload) │  │  (Gemini API)  │  │  (Cloud DB)      │    │
+│  └────────────────┘  └────────────────┘  └──────────────────┘    │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -186,8 +171,6 @@ Legal information is often complex, jargon-heavy, and inaccessible to the averag
 - **Frontend ↔ Backend**: REST APIs for CRUD operations, SSE for AI streaming
 - **Backend ↔ MongoDB**: Mongoose ODM for data persistence
 - **Backend ↔ AI Service**: HTTP requests for AI chat, SSE for streaming responses
-- **AI Service ↔ Qdrant**: Vector similarity search for RAG context
-- **AI Service ↔ Ollama**: Embedding generation for semantic search
 - **Frontend ↔ Socket.IO**: Real-time presence, messaging, typing indicators
 
 ---
@@ -257,10 +240,7 @@ Legal information is often complex, jargon-heavy, and inaccessible to the averag
 ### Prerequisites
 
 - **Node.js**: v18+ (for backend and frontend)
-- **Python**: 3.10+ (for AI service)
-- **Docker**: Latest version (for Qdrant)
 - **MongoDB**: Atlas account or local instance
-- **Ollama**: Installed locally ([Download](https://ollama.ai/download))
 - **Git**: For cloning the repository
 
 ### 1. Clone the Repository
@@ -566,9 +546,8 @@ FRONTEND_URL=http://localhost:5173
 
 **Projected Capacity** (Production):
 - Concurrent users: 1,000+ (with horizontal scaling)
-- Socket.IO connections: 10,000+ (with Redis adapter)
-- MongoDB: Sharding for 1M+ users
-- Qdrant: Clustered setup for 10M+ vectors
+- Socket.IO connections: 1,000+ (with Redis adapter)
+- MongoDB: Sharding for 100k+ users
 
 ### Test Results
 
@@ -645,29 +624,6 @@ FRONTEND_URL=http://localhost:5173
 - Add API rate limiting and throttling
 - Improve error handling and logging
 - Optimize bundle size and lazy loading
-
----
-
-### Required Files
-- ✅ Code repository link (view-only)
-- ✅ Demo video (3-6 minutes)
-- ✅ README.md (this document)
-- ✅ Architecture diagram
-- ✅ .env.example file
-
-### README Sections Covered
-- ✅ Problem statement
-- ✅ Solution overview
-- ✅ Tech stack (detailed versions)
-- ✅ System architecture (diagram + explanation)
-- ✅ Core features (with trade-offs)
-- ✅ Setup & run instructions
-- ✅ Environment variables
-- ✅ Key APIs & database models
-- ✅ Deployment details
-- ✅ Impact & metrics
-- ✅ What's next (limitations + improvements)
-
 
 ---
 
