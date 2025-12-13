@@ -1,6 +1,5 @@
 import OnBoardingPage from "./pages/OnBoardingPage";
 import { ThemeProvider } from "./contexts/theme-provider";
-import { AuthProvider } from "./contexts/authProvider";
 import ProtectedRoute from "./contexts/ProtectedRoute.jsx";
 import AuthRedirect from "./contexts/AuthRedirect";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";

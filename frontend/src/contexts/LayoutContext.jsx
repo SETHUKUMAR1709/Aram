@@ -8,7 +8,7 @@ const Layout = ({ children }) => {
   const { authUser, showMyProfile } = useAuthStore();
 
   const path = location.pathname;
-  const noNavbarPages = ["/login", "/signup", "/onBoarding", "/contact"];
+  const noNavbarPages = ["/login", "/signup", "/onBoarding" ];
   const showNavbar = !noNavbarPages.includes(path) && authUser;
 
   return (

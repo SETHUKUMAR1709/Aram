@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ModeToggle } from "./mode-toggle";
 import { useTheme } from "../contexts/theme-provider";
 import ChatList from "./chat/ChatList";
+import ContactList from "./contact/ContactList";
 
 const VerticalNavbar = () => {
   const [collapsed, setCollapsed] = useState(true);
@@ -98,6 +99,9 @@ const VerticalNavbar = () => {
                   onNewChat={createChat}
                   userId={authUser?._id}
                 />
+              ) ||
+              activePage === "/contact" && (
+                <ContactList/>
               )}
             </motion.div>
           )}
