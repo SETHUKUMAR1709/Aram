@@ -149,6 +149,7 @@ export const useAuthStore = create((set, get) => ({
       set({ isCheckingAuth: false, authUser: null });
       return;
     }
+    console.log("🔍 Checking authentication...", token);
 
     set({ isCheckingAuth: true });
 
