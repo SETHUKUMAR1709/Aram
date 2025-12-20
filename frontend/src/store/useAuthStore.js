@@ -93,7 +93,7 @@ export const useAuthStore = create((set, get) => ({
   // ===========================
   login: async (credentials) => {
     try {
-      const res = await fetch("http://localhost:5000/api/users/login", {
+      const res = await fetch(`${BACKEND_URL}/api/users/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include", // 🔥 REQUIRED
