@@ -166,7 +166,6 @@ const MyProfile = () => {
             </div>
           </div>
 
-          {/* Age Field */}
           <div className="flex w-full justify-between py-4 gap-3 border-b border-border items-center">
             <p className="font-medium w-32">Age</p>
             <div className="flex-1">
