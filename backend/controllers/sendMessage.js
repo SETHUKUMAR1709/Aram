@@ -81,6 +81,7 @@ export const sendMessage = async (req, res) => {
   try {
     const { chatId, queryreceived, checkpoint_id } = req.query;
     const parsed = JSON.parse(queryreceived);
+    console.log("Parsed message data:", parsed);
 
     const userMessage = parsed.query || "";
     const files = Array.isArray(parsed.files) ? parsed.files : [];
