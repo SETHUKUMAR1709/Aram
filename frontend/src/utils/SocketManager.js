@@ -1,7 +1,8 @@
 // src/utils/socketManager.js
 import { io } from "socket.io-client";
 
-const BACKEND_URL = process.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 
 /**
  * SocketManager
@@ -39,6 +40,7 @@ class SocketManager {
       reconnectionAttempts: 5,
       transports: ["websocket"],
     });
+
 
     // 🔹 Base lifecycle events
     this.socket.on("connect", () => {
