@@ -2,10 +2,30 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import crypto from "crypto";
+import fs from "fs";
 import Chat from "../models/chatModel.js";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { MemorySaver } from "@langchain/langgraph";
+
+const imageFileToDataURL = (filePath, mimeType) => {
+  const buffer = fs.readFileSync(filePath);
+  const base64 = buffer.toString("base64");
+  return `data:${mimeType};base64,${base64}`;
+};
+
+const deleteUploadedFiles = (files) => {
+  for (const file of files) {
+    if (file?.path) {
+      fs.unlink(file.path, (err) => {
+        if (err) {
+          console.error("File delete failed:", file.path, err.message);
+        }
+      });
+    }
+  }
+};
+
 
 let agent = null;
 
@@ -24,34 +44,33 @@ async function ensureAgent() {
     messageModifier: `
 You are Aram AI — a structured, concise, and precise legal assistant specializing in Indian Law.
 
-GENERAL INPUT HANDLING:
-- You may receive text, images, or documents.
-- Always analyze provided files before answering.
-- Never hallucinate file contents.
-
-IMAGE HANDLING:
-- Describe visible content.
-- Extract readable text if present.
-- Summarize images in a legal context when applicable.
+CRITICAL STREAMING RULES:
+- Never acknowledge receipt of files.
+- Never state that you are analyzing or processing.
+- Start responding immediately.
+- Stream partial findings as soon as possible.
 
 DOCUMENT HANDLING:
-- Summarize contents.
-- Identify relevant legal sections, parties, dates, and obligations.
+- Immediately summarize documents.
+- Extract identity, dates, parties, obligations, and legal relevance if present.
 
-FORMATTING:
+IMAGE HANDLING:
+- Immediately describe visible content.
+- Extract readable text if present.
+- Stream observations line by line.
+
+FORMAT:
 - Use Markdown headings.
 - Keep paragraphs short.
-- Do not break Markdown across streamed chunks.
-- Lists must use '-' or '1.' consistently.
-- URLs must appear only in a "Sources" section.
+- Do not repeat information.
+- Do not include meta commentary.
 
 LEGAL SAFETY:
-- Provide legal information, not legal advice.
-- Cite Indian statutes or case law when relevant.
+- Provide legal information only.
 
 TONE:
-- Professional, neutral, precise.
-    `,
+- Professional, direct, factual.
+`,
     checkpointSaver: new MemorySaver(),
   });
 
@@ -95,13 +114,15 @@ export const sendMessage = async (req, res) => {
     for (const file of files) {
       if (file.isImage && file.path) {
         contentParts.push({
-          type: "image_url",
-          image_url: { url: file.path },
-        });
+        type: "image_url",
+        image_url: {
+          url: imageFileToDataURL(file.path, file.mimeType),
+        },
+      });
       } else {
         contentParts.push({
           type: "text",
-          text: `Document uploaded: ${file.originalName} (${file.mimeType})`,
+          text: `Summarize this document:\nName: ${file.originalName}\nType: ${file.mimeType}`,
         });
       }
     }
@@ -177,13 +198,18 @@ export const sendMessage = async (req, res) => {
           },
           checkpoint_id: threadId,
         });
+
+        deleteUploadedFiles(files);
+
       } catch (err) {
         console.error("DB save error:", err);
       }
     });
   } catch (err) {
     console.error("chatStream error:", err);
-    res.write(`data: ${JSON.stringify({ type: "error", message: err.message })}\n\n`);
+    res.write(
+      `data: ${JSON.stringify({ type: "error", message: err.message })}\n\n`
+    );
     res.end();
   }
 };
