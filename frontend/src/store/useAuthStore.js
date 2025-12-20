@@ -301,59 +301,65 @@ export const useAuthStore = create((set, get) => ({
     return chat;
   },
 
-    sendAIMessage: ({
-  chatId,
-  payload,
-  checkpointId,
-  onEvent,
-  onEnd,
-  onError,
-}) => {
-  try {
-    const messagePayload = {
-      userId: get().authUser._id,
-      chatId,
-      query: payload.query,
-      files: payload.files || [],
-    };
+    
+  sendAIMessage: ({
+    chatId,
+    payload,
+    checkpointId,
+    onEvent,
+    onEnd,
+    onError,
+  }) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!token) throw new Error("No auth token");
 
-    let url = `${BACKEND_URL}/api/chats/send?chatId=${chatId}&queryreceived=${encodeURIComponent(
-      JSON.stringify(messagePayload)
-    )}`;
+      const messagePayload = {
+        userId: get().authUser._id,
+        chatId,
+        query: payload.query,
+        files: payload.files || [],
+      };
 
-    if (checkpointId) {
-      url += `&checkpoint_id=${encodeURIComponent(checkpointId)}`;
-    }
+      let url =
+        `${BACKEND_URL}/api/chats/send` +
+        `?token=${encodeURIComponent(token)}` +
+        `&chatId=${chatId}` +
+        `&queryreceived=${encodeURIComponent(
+          JSON.stringify(messagePayload)
+        )}`;
 
-    set({ aiStreaming: true, aiError: null });
-
-    const eventSource = new EventSource(url, {
-      withCredentials: true,
-    });
-
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      onEvent?.(data);
-
-      if (data.type === "end") {
-        eventSource.close();
-        set({ aiStreaming: false });
-        onEnd?.();
+      if (checkpointId) {
+        url += `&checkpoint_id=${encodeURIComponent(checkpointId)}`;
       }
-    };
 
-    eventSource.onerror = (err) => {
-      eventSource.close();
-      set({ aiStreaming: false, aiError: "AI stream failed" });
-      onError?.(err);
-    };
+      set({ aiStreaming: true, aiError: null });
 
-    return eventSource;
-  } catch (err) {
-    set({ aiStreaming: false, aiError: err.message });
-    throw err;
-  }
-},
+      const eventSource = new EventSource(url);
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        onEvent?.(data);
+
+        if (data.type === "end") {
+          eventSource.close();
+          set({ aiStreaming: false });
+          onEnd?.();
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        eventSource.close();
+        set({ aiStreaming: false, aiError: "AI stream failed" });
+        onError?.(err);
+      };
+
+      return eventSource;
+    } catch (err) {
+      set({ aiStreaming: false, aiError: err.message });
+      throw err;
+    }
+  },
 
 
 
