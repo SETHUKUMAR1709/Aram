@@ -143,10 +143,20 @@ export const useAuthStore = create((set, get) => ({
   },
 
   checkAuth: async () => {
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      set({ isCheckingAuth: false, authUser: null });
+      return;
+    }
+
     set({ isCheckingAuth: true });
+
     try {
       const res = await fetch(`${BACKEND_URL}/api/users/profile`, {
-        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!res.ok) throw new Error("Auth check failed");
@@ -154,17 +164,19 @@ export const useAuthStore = create((set, get) => ({
       const profile = await res.json();
       set({ authUser: profile });
 
-      if (profile._id) {
+      if (profile?._id) {
         await get().getContacts(profile._id);
       }
 
       get().connectSocket();
-    } catch {
+    } catch (err) {
       localStorage.removeItem("authToken");
+      set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
     }
   },
+
 
   logout: async () => {
     try {
