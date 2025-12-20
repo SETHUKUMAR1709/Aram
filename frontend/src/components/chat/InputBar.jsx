@@ -1,10 +1,18 @@
 import { useAuthStore } from "@/store/useAuthStore";
-import { ArrowUp, StickyNote } from "lucide-react";
-import { useRef, useEffect } from "react";
+import { ArrowUp, Paperclip, X } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
 
-const InputBar = ({ currentMessage, setCurrentMessage, onSubmit, disabled }) => {
+const InputBar = ({
+  currentMessage,
+  setCurrentMessage,
+  onSubmit,
+  selectedFiles,
+  setSelectedFiles,
+  disabled,
+}) => {
   const textareaRef = useRef(null);
-  const { showLetter, toggleShowLetter } = useAuthStore();
+  const fileInputRef = useRef(null);
+
 
   const handleChange = (e) => {
     setCurrentMessage(e.target.value);
@@ -38,24 +46,47 @@ const InputBar = ({ currentMessage, setCurrentMessage, onSubmit, disabled }) => 
       setCurrentMessage("");
     }
   };
+  const removeFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <form
       onSubmit={handleSubmit}
       className="p-4 z-90 w-[95%] md:w-xl lg:w-4xl xl:w-5xl 2xl:w-6xl"
-    >
+    >{selectedFiles.length > 0 && (
+        <div className="flex gap-2 mb-2 flex-wrap">
+          {selectedFiles.map((file, idx) => (
+            <div
+              key={idx}
+              className="flex items-center gap-2 bg-muted px-3 py-1 rounded-lg text-xs"
+            >
+              <span className="max-w-[120px] truncate">{file.name}</span>
+              <button onClick={() => removeFile(idx)}>
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex items-center bg-sidebar/60 rounded-xl p-2 shadow-md w-full">
         <button
-          className={`p-2 rounded-lg ${
-            showLetter
-              ? "bg-gradient-to-l opacity-80 from-emerald-500 to-green-600 text-white"
-              : ""
-          }`}
-          type="button"
-          onClick={toggleShowLetter}
+          className="text-muted-foreground hover:text-foreground"
+          onClick={() => fileInputRef.current.click()}
         >
-          <StickyNote className="size-5" />
+          <Paperclip size={18} />
         </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          accept="image/*,.pdf,.doc,.docx"
+          onChange={(e) => setSelectedFiles([...e.target.files])}
+        />
+
+
         <textarea
           ref={textareaRef}
           placeholder="Type a message..."

@@ -42,13 +42,11 @@ export const registerUser = async (req, res) => {
       return res.status(409).json({ message: "Email already exists" });
     }
 
-    // Check mobile
     existingUser = await User.findOne({ mobile });
     if (existingUser) {
       return res.status(409).json({ message: "Mobile number already used" });
     }
 
-    // Handle profile picture
     let profilePicUrl = null;
     if (file) {
       const upload = await cloudinary.uploader.upload(file.path, {
@@ -107,41 +105,70 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    // Find user by email
-    const user = await User.findOne({ email }).select('+password');
+
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(400).json({ message: 'Invalid email' });
+      return res.status(400).json({ message: "Invalid email" });
     }
-    // Compare password
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Password Incorrect' });
+      return res.status(400).json({ message: "Password Incorrect" });
     }
-    // Create JWT
+
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: "30d" }
     );
-    let safeUser = await User.findById(user._id).select('-password')
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    const safeUser = await User.findById(user._id)
+      .select("-password")
       .populate({
         path: "chats",
-        options: { sort: { createdAt: -1 } }, // sorted
+        options: { sort: { createdAt: -1 } },
       });
+
     const obj = safeUser.toObject();
-    const chats = obj.chats.map(chat => ({
+
+    const chats = obj.chats.map((chat) => ({
       _id: chat._id,
       name: chat.name,
       checkpoint_id: chat.checkpoint_id,
       createdAt: chat.createdAt,
     }));
 
-
-    res.status(200).json({ token, user: { ...obj, chats: chats } });
+    res.status(200).json({
+      token,
+      user: { ...obj, chats },
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+export const logoutUser = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    return res.status(500).json({ message: "Logout failed" });
+  }
+};
+
+
 
 export const getUserProfile = async (req, res) => {
   try {

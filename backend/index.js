@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import compression from 'compression';
 import express from 'express';
+import cookieParser from "cookie-parser";
 
 import userRoutes from './routes/userRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
@@ -33,6 +34,8 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true
 }));
+
+app.use(cookieParser());
 
 // 2. Compression - Before body parsers, but skip SSE routes
 app.use(compression({

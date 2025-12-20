@@ -19,6 +19,8 @@ export const useAuthStore = create((set, get) => ({
   showLetter: false,
   currentContact: null,
   contacts: [],
+  aiStreaming: false,
+  aiError: null,
 
   // ===========================
   // 🧠 UI Toggles
@@ -90,11 +92,12 @@ export const useAuthStore = create((set, get) => ({
   // ===========================
   login: async (credentials) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/users/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials),
-      });
+      const res = await fetch("http://localhost:5000/api/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", // 🔥 REQUIRED
+          body: JSON.stringify(credentials),
+        });
       const result = await res.json();
       result.ok = res.ok;
       if (!res.ok) throw new Error(result.message || "Login failed");
@@ -142,64 +145,68 @@ export const useAuthStore = create((set, get) => ({
   checkAuth: async () => {
     set({ isCheckingAuth: true });
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-
       const res = await fetch(`${BACKEND_URL}/api/users/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       });
+
       if (!res.ok) throw new Error("Auth check failed");
 
       const profile = await res.json();
       set({ authUser: profile });
-      
-      // Fetch contacts before connecting socket
+
       if (profile._id) {
         await get().getContacts(profile._id);
       }
-      
+
       get().connectSocket();
-    } catch (err) {
-      console.error("🚨 Auth check error:", err);
+    } catch {
       localStorage.removeItem("authToken");
     } finally {
       set({ isCheckingAuth: false });
     }
   },
 
-  logout: () => {
+  logout: async () => {
+    try {
+      await fetch(`${BACKEND_URL}/api/users/logout`, {
+        method: "POST",
+        credentials: "include", 
+      });
+    } catch (_) {}
+
     get().disconnectSocket();
     localStorage.removeItem("authToken");
-    set({ 
-      authUser: null, 
-      onlineUsers: [], 
+
+    set({
+      authUser: null,
+      onlineUsers: [],
       currentChatId: null,
       currentContact: null,
-      contacts: []
+      contacts: [],
     });
   },
+
+
 
   // ===========================
   // ⚙️ UNIVERSAL FETCH HELPER
   // ===========================
-  fetchWithAuth: async (url, options = {}) => {
+    fetchWithAuth: async (url, options = {}) => {
     const token = localStorage.getItem("authToken");
-    if (!token) throw new Error("Not authenticated");
 
-    const headers = {
-      Authorization: `Bearer ${token}`,
-    };
+    const headers = {};
 
-    // Detect JSON body
-    if (
-      options.body &&
-      !(options.body instanceof FormData)
-    ) {
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (options.body && !(options.body instanceof FormData)) {
       headers["Content-Type"] = "application/json";
     }
 
     const res = await fetch(url, {
       ...options,
+      credentials: "include", // 🔥 THIS LINE
       headers: {
         ...headers,
         ...(options.headers || {}),
@@ -210,6 +217,7 @@ export const useAuthStore = create((set, get) => ({
     if (!res.ok) throw new Error(data.message || "Request failed");
     return data;
   },
+
 
 
   // ===========================
@@ -279,6 +287,63 @@ export const useAuthStore = create((set, get) => ({
     }));
     return chat;
   },
+
+    sendAIMessage: ({
+  chatId,
+  payload,
+  checkpointId,
+  onEvent,
+  onEnd,
+  onError,
+}) => {
+  try {
+    const messagePayload = {
+      userId: get().authUser._id,
+      chatId,
+      query: payload.query,
+      files: payload.files || [],
+    };
+
+    let url = `${BACKEND_URL}/api/chats/send?chatId=${chatId}&queryreceived=${encodeURIComponent(
+      JSON.stringify(messagePayload)
+    )}`;
+
+    if (checkpointId) {
+      url += `&checkpoint_id=${encodeURIComponent(checkpointId)}`;
+    }
+
+    set({ aiStreaming: true, aiError: null });
+
+    const eventSource = new EventSource(url, {
+      withCredentials: true,
+    });
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      onEvent?.(data);
+
+      if (data.type === "end") {
+        eventSource.close();
+        set({ aiStreaming: false });
+        onEnd?.();
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      eventSource.close();
+      set({ aiStreaming: false, aiError: "AI stream failed" });
+      onError?.(err);
+    };
+
+    return eventSource;
+  } catch (err) {
+    set({ aiStreaming: false, aiError: err.message });
+    throw err;
+  }
+},
+
+
+
 
   deleteChat: async (chatId) => {
     await get().fetchWithAuth(`${BACKEND_URL}/api/chats/${chatId}`, { method: "DELETE" });

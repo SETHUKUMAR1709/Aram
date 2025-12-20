@@ -3,7 +3,6 @@ dotenv.config();
 
 import crypto from "crypto";
 import Chat from "../models/chatModel.js";
-
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { MemorySaver } from "@langchain/langgraph";
@@ -13,8 +12,6 @@ let agent = null;
 async function ensureAgent() {
   if (agent) return agent;
 
-  console.log("🧠 Initializing LangGraph React Agent…");
-
   const llm = new ChatGoogleGenerativeAI({
     model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
     apiKey: process.env.GOOGLE_API_KEY,
@@ -23,64 +20,93 @@ async function ensureAgent() {
 
   agent = createReactAgent({
     llm,
-    tools: [], 
+    tools: [],
     messageModifier: `
-You are Aram AI — a structured, concise, and precise legal assistant from Indian Law.
+You are Aram AI — a structured, concise, and precise legal assistant specializing in Indian Law.
 
-FORMATTING REQUIREMENTS:
-- Use clean Markdown with sections (##, ###).
-- Keep paragraphs short (1–2 sentences).
-- Always avoid unnecessary blank lines.
-- Never break Markdown structures across streamed chunks.
-- Emit bullet points and headings as complete units.
+GENERAL INPUT HANDLING:
+- You may receive text, images, or documents.
+- Always analyze provided files before answering.
+- Never hallucinate file contents.
+
+IMAGE HANDLING:
+- Describe visible content.
+- Extract readable text if present.
+- Summarize images in a legal context when applicable.
+
+DOCUMENT HANDLING:
+- Summarize contents.
+- Identify relevant legal sections, parties, dates, and obligations.
+
+FORMATTING:
+- Use Markdown headings.
+- Keep paragraphs short.
+- Do not break Markdown across streamed chunks.
 - Lists must use '-' or '1.' consistently.
-- Place full URLs inside a "Sources" section.
-- Do not repeat text or restate previous content.
+- URLs must appear only in a "Sources" section.
 
-CONTENT REQUIREMENTS:
+LEGAL SAFETY:
 - Provide legal information, not legal advice.
-- Include definitions, elements, examples, and penalties when useful.
-- Keep answers concise and logically structured.
-- For serious legal harm topics, include safety guidance.
-- Cite real legal sources when possible.
+- Cite Indian statutes or case law when relevant.
 
 TONE:
-- Professional, neutral, and helpful.
-- No filler language or disclaimers beyond what is required.
+- Professional, neutral, precise.
     `,
-    checkpointSaver: new MemorySaver()
+    checkpointSaver: new MemorySaver(),
   });
 
-  console.log("✔ LangGraph agent ready");
   return agent;
 }
 
 export const sendMessage = async (req, res) => {
   try {
-    const { chatId, messageId, queryreceived, checkpoint_id } = req.query;
-    const { query: userMessage } = JSON.parse(queryreceived);
+    const { chatId, queryreceived, checkpoint_id } = req.query;
+    const parsed = JSON.parse(queryreceived);
+
+    const userMessage = parsed.query || "";
+    const files = Array.isArray(parsed.files) ? parsed.files : [];
 
     const graph = await ensureAgent();
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders?.();
 
-    const send = async (ev) => {
+    const send = (ev) => {
       res.write(`data: ${JSON.stringify(ev)}\n\n`);
       res.flush?.();
     };
 
     const threadId = checkpoint_id || crypto.randomUUID();
-    const isNewThread = !checkpoint_id;
-
-    if (isNewThread) {
-      await send({ type: "checkpoint", checkpoint_id: threadId });
+    if (!checkpoint_id) {
+      send({ type: "checkpoint", checkpoint_id: threadId });
     }
 
-    await send({ type: "thinking" });
+    send({ type: "thinking" });
 
+    const contentParts = [];
+
+    if (userMessage) {
+      contentParts.push({ type: "text", text: userMessage });
+    }
+
+    for (const file of files) {
+      if (file.isImage && file.path) {
+        contentParts.push({
+          type: "image_url",
+          image_url: { url: file.path },
+        });
+      } else {
+        contentParts.push({
+          type: "text",
+          text: `Document uploaded: ${file.originalName} (${file.mimeType})`,
+        });
+      }
+    }
+
+    let assistantResponse = "";
     let searchInfo = {
       stages: [],
       query: "",
@@ -89,91 +115,72 @@ export const sendMessage = async (req, res) => {
       internalUrls: [],
       ragQuery: "",
       ragContext: "",
-      error: null
+      error: null,
     };
-
-    let assistantResponse = "";
 
     const eventStream = await graph.streamEvents(
       {
         messages: [
           {
             role: "user",
-            content: userMessage
-          }
-        ]
+            content: contentParts,
+          },
+        ],
       },
       {
         version: "v2",
-        configurable: { thread_id: threadId }
+        configurable: { thread_id: threadId },
       }
     );
 
     for await (const event of eventStream) {
-      const type = event.event;
-
-      if (
-        type === "on_chat_model_stream" &&
-        event.data?.chunk?.content?.toLowerCase().includes("http")
-      ) {
-        const urls = [...event.data.chunk.content.matchAll(/https?:\/\/\S+/g)].map(m => m[0]);
-        if (urls.length) {
-          searchInfo.stages.push("searching");
-          searchInfo.stages.push("reading");
-          searchInfo.urls.push(...urls);
-          await send({ type: "search_start", query: "Referenced sources" });
-          await send({ type: "search_results", urls });
-        }
-      }
-
-      // 🔹 Content chunks
-      if (type === "on_chat_model_stream") {
-        const chunk = event.data?.chunk?.content;
+      if (event.event === "on_chat_model_stream") {
+        const chunk = event.data?.chunk?.content || "";
         assistantResponse += chunk;
-
         searchInfo.stages.push("writing");
-        await send({ type: "content", content: chunk });
+        send({ type: "content", content: chunk });
       }
     }
 
-    await send({ type: "end" });
+    send({ type: "end" });
     res.end();
-
-    searchInfo.stages = Array.from(new Set(searchInfo.stages));
 
     setImmediate(async () => {
       try {
-        await Chat.findByIdAndUpdate(
-          chatId,
-          {
-            $push: {
-              messages: [
-                {
-                  role: "user",
-                  content: userMessage,
-                  messageId: Number(messageId),
-                  timestamp: new Date()
-                },
-                {
-                  role: "ai",
-                  content: assistantResponse.trim(),
-                  messageId: Number(messageId) + 1,
-                  timestamp: new Date(),
-                  searchInfo
-                }
-              ]
-            },
-            checkpoint_id: threadId
-          },
-          { new: true }
-        );
+        const chat = await Chat.findById(chatId).select("messages");
+        if (!chat) return;
 
-        console.log("💾 Saved user + ai messages with searchInfo");
+        const lastId = chat.messages.length
+          ? chat.messages[chat.messages.length - 1].messageId
+          : 0;
+
+        searchInfo.stages = Array.from(new Set(searchInfo.stages));
+
+        await Chat.findByIdAndUpdate(chatId, {
+          $push: {
+            messages: [
+              {
+                role: "user",
+                content: userMessage,
+                messageId: lastId + 1,
+                timestamp: new Date(),
+                files,
+              },
+              {
+                role: "ai",
+                content: assistantResponse.trim(),
+                messageId: lastId + 2,
+                timestamp: new Date(),
+                searchInfo,
+              },
+            ],
+          },
+          checkpoint_id: threadId,
+        });
       } catch (err) {
-        console.error("❌ DB save error:", err);
+        console.error("DB save error:", err);
       }
     });
-
   } catch (err) {
     console.error("chatStream error:", err);
     res.write(`data: ${JSON.stringify({ type: "error", message: err.message })}\n\n`);
