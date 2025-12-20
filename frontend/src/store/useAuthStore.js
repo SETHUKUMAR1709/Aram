@@ -3,7 +3,6 @@ import { redirect } from "react-router-dom";
 import { socketManager } from "../utils/SocketManager";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
-console.log("🌐 Backend URL:", BACKEND_URL);
 
 export const useAuthStore = create((set, get) => ({
   // ===========================
