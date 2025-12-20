@@ -32,7 +32,7 @@ const LawyersItem = ({ lawyer }) => {
         {/* Profile Picture */}
         <div className='p-1 border-2 border-emerald-500 h-fit rounded-full'>
           <img 
-            src={lawyer.profilePic || "./images/user.jpg"} 
+            src={lawyer.profilePic || `${import.meta.env.BASE_URL}/images/user.jpg`} 
             alt={`${lawyer.firstName} ${lawyer.lastName}`} 
             className='size-14 rounded-full object-cover' 
           />

@@ -6,7 +6,7 @@ const ContentElement = ({ contact, onClick, isActive, isOnline }) => {
     useEffect(() => {
         // Preload contact user image
         const img = new Image();
-        img.src = contact.contactUser?.profilePic || '/images/user.jpg';
+        img.src = contact.contactUser?.profilePic || `${import.meta.env.BASE_URL}/images/user.jpg`;
     }, [contact.contactUser]);
 
     const { authUser } = useAuthStore();
@@ -46,7 +46,7 @@ const ContentElement = ({ contact, onClick, isActive, isOnline }) => {
         >
             <div className="border size-12 rounded-xl flex-shrink-0 relative non-selectable-text">
                 <img
-                    src={contactUser.profilePic || '/images/user.jpg'}
+                    src={contactUser.profilePic || `${import.meta.env.BASE_URL}/images/user.jpg`}
                     className="size-12 rounded-xl object-cover"
                     draggable={false}
                     alt={contactUser.firstName || 'User'}

@@ -119,7 +119,7 @@ const VerticalNavbar = () => {
           className={`flex items-center overflow-x-hidden gap-3 py-2  rounded-xl hover:bg-[#494949]/5 dark:hover:bg-[#494949]/10 transition cursor-pointer px-3`}
         >
           <img
-            src={authUser?.profilePic || "./images/user.jpg"}
+            src={authUser?.profilePic || `${import.meta.env.BASE_URL}/images/user.jpg`}
             className="w-10 h-10 rounded-full border-2 overflow-x-hidden border-[#10B981]"
             alt="User"
           />

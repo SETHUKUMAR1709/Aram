@@ -105,7 +105,7 @@ const ChatContainer = () => {
         <div className="flex items-center gap-3">
           <div className="relative">
             <img
-              src={currentContact.contactUser.profilePic || "/images/user.jpg"}
+              src={currentContact.contactUser.profilePic || `${import.meta.env.BASE_URL}/images/user.jpg`}
               className="size-11 rounded-full object-cover"
               alt="user"
             />

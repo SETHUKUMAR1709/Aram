@@ -11,7 +11,7 @@ const Header = () => {
                   className="font-goldman text-2xl font-semibold"
                 >
                   <div className="flex">
-                    <img src="../images/logo.png" alt="" className="size-7" />
+                    <img src={`${import.meta.env.BASE_URL}/images/logo.png`} alt="" className="size-7" />
                   </div>
         </h1>
         <span className="font-heading font-bold text-xl tracking-tight opacity-80">
