@@ -196,6 +196,21 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
+export const getProfileById = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId).select('-password -chats');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log("Fetched user profile for ID:", userId, user);
+    res.status(200).json(user);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 export const updateUserProfile = async (req, res) => {
   try {
     let updates = { ...req.body };

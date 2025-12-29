@@ -219,7 +219,7 @@ export const useAuthStore = create((set, get) => ({
 
     const res = await fetch(url, {
       ...options,
-      credentials: "include", // 🔥 THIS LINE
+      credentials: "include", 
       headers: {
         ...headers,
         ...(options.headers || {}),
@@ -428,9 +428,12 @@ export const useAuthStore = create((set, get) => ({
     });
   },
 
-  // ===========================
-  // 👤 PROFILE UPDATE
-  // ===========================
+  getProfileById: async (userId) => {
+    return await get().fetchWithAuth(`${BACKEND_URL}/api/users/${userId}/profile`, {
+      method: "GET"
+    });
+  },
+
   updateProfile: async (updates) => {
     const token = localStorage.getItem("authToken");
     if (!token) return;
