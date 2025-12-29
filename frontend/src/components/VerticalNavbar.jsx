@@ -9,15 +9,15 @@ import ChatList from "./chat/ChatList";
 import ContactList from "./contact/ContactList";
 
 const VerticalNavbar = () => {
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const { theme, setTheme } = useTheme();
   const { authUser, setShowMyProfile, createChat } = useAuthStore();
   const [activePage, setActivePage] = useState("/chat");
-  const [isZoomed, setIsZoomed] = useState(false); 
-  useEffect(()=>{},[activePage])
-  
+  const [isZoomed, setIsZoomed] = useState(false);
+  useEffect(() => { }, [activePage])
 
-  const contentTransition = { duration: 0.1, delay: 0.01 }; 
+
+  const contentTransition = { duration: 0.1, delay: 0.01 };
 
   const navItems = [
     { name: "Aram AI", path: "/chat", icon: <Bot size={22} /> },
@@ -30,47 +30,46 @@ const VerticalNavbar = () => {
       initial={{ width: 68 }}
       animate={{ width: collapsed ? 68 : 260 }}
       transition={{ type: "tween", duration: 0.2 }}
-      // Ensure scrollbar-hide is present on the main container
-      className={`h-screen overflow-y-auto scrollbar-hide overflow-x-hidden top-0 left-0 z-80 flex flex-col justify-between
-                  dark:bg-sidebar/30 bg-sidebar/60 backdrop-blur shadow-lg 
-                  rounded-r-2xl fixed md:relative ${collapsed ? "w-16" : "w-70"}
-                  ${isZoomed ? "overflow-y-auto" : ""}`}
+      className={`h-screen flex flex-col
+    dark:bg-sidebar/30 bg-sidebar/60 backdrop-blur shadow-lg
+    rounded-r-2xl fixed md:relative
+    overflow-hidden`}
     >
-      {/* Top Section */}
-      <div className="flex flex-col gap-10 py-6 px-4">
-        {/* Logo + Collapse toggle */}
-        <div className={`flex items-center justify-between `}>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1 rounded-lg hover:bg-[#494949]/5 dark:hover:bg-[#494949]/10 transition "
-          >
-            <Menu size={22} />
-          </button>
-        </div>
+
+      {/* 🔝 TOP SECTION */}
+      <div className="flex flex-col gap-4 px-4 pt-4 pb-2">
+        {/* Collapse button */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="p-1 w-fit rounded-lg hover:bg-[#494949]/5 dark:hover:bg-[#494949]/10 transition"
+        >
+          <Menu size={22} />
+        </button>
 
         {/* Nav Items */}
-        <nav className="flex flex-col gap-3">
+        <nav className="flex flex-col gap-2">
           {navItems.map(({ name, path, icon }) => (
             <NavLink
               key={name}
               to={path}
-              onClick={() => { setActivePage(path); }}
+              onClick={() => setActivePage(path)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-2 py-2 rounded-xl relative group
-                 transition-all duration-200 text-foreground overflow-x-hidden
-                 ${ isActive ? "bg-[#494949]/10 dark:bg-[#494949]/30 shadow-md" : "hover:bg-[#494949]/5 dark:hover:bg-[#494949]/10" } `
+                `flex items-center gap-3 px-2 py-2 rounded-xl
+             transition-all duration-200 text-foreground
+             ${isActive
+                  ? "bg-[#494949]/10 dark:bg-[#494949]/30"
+                  : "hover:bg-[#494949]/5 dark:hover:bg-[#494949]/10"}`
               }
             >
               {icon}
               <AnimatePresence>
                 {!collapsed && (
                   <motion.span
-                    initial={{ opacity: 0, x: -15 }}
+                    initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -15 }}
-                    transition={contentTransition}
-                    // FIX: Added whitespace-nowrap here
-                    className=" text-foreground **whitespace-nowrap**" 
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.1 }}
+                    className="whitespace-nowrap"
                   >
                     {name}
                   </motion.span>
@@ -81,17 +80,17 @@ const VerticalNavbar = () => {
         </nav>
       </div>
 
-      {/* Middle Section (Chat List) - Ensure inner ChatList scroll container is hidden */}
-      <div className="flex-1 overflow-y-auto mt-4 mb-4 min-h-40 overflow-x-hidden">
+      {/* 🟢 MIDDLE SECTION (THIS IS THE KEY FIX) */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-2 scrollbar-hide">
         <AnimatePresence mode="wait">
           {!collapsed && (
             <motion.div
-              key="chatlist"
+              key={activePage}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.01 }}
-              className="w-full flex-1"
+              transition={{ duration: 0.1 }}
+              className="h-full"
             >
               {activePage === "/chat" && (
                 <ChatList
@@ -99,47 +98,62 @@ const VerticalNavbar = () => {
                   onNewChat={createChat}
                   userId={authUser?._id}
                 />
-              ) ||
-              activePage === "/contact" && (
-                <ContactList/>
               )}
+
+              {activePage === "/contact" && <ContactList />}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Bottom Section (User Profile) */}
-      <div className="flex flex-col gap-4 py-4">
-        <div className="px-3">
-          <ModeToggle />
-        </div>
-
+      {/* 🔽 BOTTOM SECTION */}
+      <div
+        className={`
+    px-3 py-3 border-t border-muted
+    flex gap-3
+    ${collapsed ? "flex-col items-center" : "flex-row items-center"}
+  `}
+      >
+        {/* Profile Button */}
         <button
-          onClick={() => { setShowMyProfile(); }}
-          className={`flex items-center overflow-x-hidden gap-3 py-2  rounded-xl hover:bg-[#494949]/5 dark:hover:bg-[#494949]/10 transition cursor-pointer px-3`}
+          onClick={() => setShowMyProfile()}
+          className={`
+      flex items-center gap-3 rounded-xl transition
+      hover:bg-[#494949]/5 dark:hover:bg-[#494949]/10
+      ${collapsed ? "" : "flex-1 p-2"}
+    `}
         >
           <img
             src={authUser?.profilePic || `${import.meta.env.BASE_URL}/images/user.jpg`}
-            className="w-10 h-10 rounded-full border-2 overflow-x-hidden border-[#10B981]"
+            className="w-9 h-9 rounded-full border-2 border-[#10B981]"
             alt="User"
           />
+
           <AnimatePresence>
             {!collapsed && (
               <motion.div
-                initial={{ opacity: 0, x: -15 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex flex-col overflow-x-hidden items-start **whitespace-nowrap**"
+                className="flex flex-col items-start whitespace-nowrap"
               >
-                <p className="font-semibold opacity-80">
+                <p className="font-semibold text-sm">
                   {authUser?.firstName || "User"}
                 </p>
-                <p className="text-sm">View Profile</p>
+                <p className="text-xs opacity-70">View Profile</p>
               </motion.div>
             )}
           </AnimatePresence>
         </button>
+
+        {/* Mode Toggle */}
+        <div className={collapsed ? "" : "ml-auto"}>
+          <ModeToggle />
+        </div>
       </div>
+
+
     </motion.div>
+
   );
 };
 

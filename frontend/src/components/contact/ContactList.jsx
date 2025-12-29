@@ -81,9 +81,9 @@ const ContactList = () => {
     };
 
     return (
-        <div className="w-full h-full flex flex-col border-r-1 border-muted rounded-none md:rounded-lg">
+        <div className="w-full h-full flex flex-col border-r-1 border-muted rounded-none md:rounded-lg overflow-y-auto scrollbar-hide">
             {/* Header */}
-            <div className="py-6 border-b-1 border-muted rounded-t-lg flex flex-row justify-center px-2 gap-2">
+            <div className="py-2 border-b-1 border-muted rounded-t-lg flex flex-row justify-center px-2 gap-2">
 
                 <div className="w-full dark:bg-foreground/4 bg-foreground/2 text-sm flex gap-2 p-2 rounded-lg items-center">
                     <Search className="size-4" />
